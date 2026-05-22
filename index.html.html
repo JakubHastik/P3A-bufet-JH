@@ -1,0 +1,235 @@
+
+```html
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Objednávka školního bufetu</title>
+
+<style>
+body {
+    font-family: Arial,sans-serif;
+    background:#f4f7fb;
+    margin:0;
+}
+
+h1{
+    text-align:center;
+    background:#2a72d4;
+    color:white;
+    padding:20px;
+    margin:0;
+}
+
+.container{
+    width:90%;
+    max-width:500px;
+    margin:30px auto;
+    background:white;
+    border-radius:12px;
+    padding:25px;
+    box-shadow:0 4px 12px rgba(0,0,0,.1);
+}
+
+.item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:12px 0;
+}
+
+input[type=number]{
+    width:70px;
+    padding:6px;
+    text-align:center;
+}
+
+#celkem{
+    text-align:center;
+    font-size:22px;
+    margin-top:25px;
+    font-weight:bold;
+    color:#2a72d4;
+}
+
+button{
+    width:100%;
+    padding:15px;
+    margin-top:25px;
+    font-size:20px;
+    color:white;
+    background:#ff6b35;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Objednávka – Školní bufet</h1>
+
+<div class="container">
+
+    <!-- Sem se automaticky vloží produkty z CSV -->
+    <div id="produkty"></div>
+
+    <div id="celkem">
+        Celková cena: 0 Kč
+    </div>
+
+    <button onclick="odeslatObjednavku()">
+        ODESLAT OBJEDNÁVKU
+    </button>
+
+</div>
+
+<script>
+
+// Dynamicky vytvořený ceník
+let prices={};
+
+// načtení CSV po otevření stránky
+nactiCSV();
+
+function nactiCSV(){
+
+/*
+Časové razítko zabrání cache.
+Po F5 se načte nová verze CSV.
+Důležité hlavně pro GitHub Pages.
+*/
+
+fetch(
+    "Data_bufet.csv?v="+Date.now(),
+
+    {
+        cache:"no-store"
+    }
+)
+.then(response=>response.text())
+.then(data=>vytvorProdukty(data))
+.catch(error=>{
+console.log("Chyba:",error)
+});
+
+}
+
+function vytvorProdukty(data){
+
+let produkty=
+document.getElementById("produkty");
+
+produkty.innerHTML="";
+prices={};
+
+let radky=
+data.trim().split("\n");
+
+for(let i=1;i<radky.length;i++){
+
+let sloupce=
+radky[i].trim().split(";");
+
+if(sloupce.length<2) continue;
+
+let nazev=sloupce[0];
+let cena=Number(sloupce[1]);
+
+let id=nazev
+.toLowerCase()
+.replaceAll(" ","_");
+
+prices[id]=cena;
+
+let div=
+document.createElement("div");
+
+div.className="item";
+
+div.innerHTML=`
+
+<span>
+${nazev} (${cena} Kč)
+</span>
+
+<input
+type="number"
+id="${id}"
+value="0"
+min="0">
+
+`;
+
+produkty.appendChild(div);
+
+}
+
+// posluchače pro přepočet
+
+document
+.querySelectorAll("input")
+.forEach(input=>{
+input.addEventListener(
+"input",
+spocitejCenu
+)
+})
+
+}
+
+function spocitejCenu(){
+
+let total=0;
+
+for(let id in prices){
+
+let kusy=
+document.getElementById(id);
+
+if(kusy){
+
+total+=
+kusy.value*
+prices[id];
+
+}
+}
+
+document.getElementById(
+"celkem"
+).textContent=
+"Celková cena: "+
+total+
+" Kč";
+
+}
+
+function odeslatObjednavku(){
+
+let objednavka={};
+
+for(let id in prices){
+objednavka[id]=Number(
+document.getElementById(id).value
+)
+}
+
+console.log(objednavka)
+
+alert(
+"Objednávka odeslána"
+)
+
+}
+
+</script>
+
+</body>
+</html>
+```
+
